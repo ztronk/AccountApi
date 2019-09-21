@@ -14,4 +14,5 @@ create table Account (
 	Balance decimal(20, 2)
 )
 
-insert into Account values ('40817810110000001', 0)
+insert into Accounts values ('40817810110000001', 0)
+insert into Accounts values ('40817810110000002', 0)

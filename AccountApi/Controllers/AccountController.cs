@@ -12,70 +12,6 @@ namespace AccountApi.Controllers
 {
     public class AccountController : ApiController
     {
-        List<Account> accList = new List<Account>();
-        List<AccountHistory> accHistList = new List<AccountHistory>();
-
-        #region Конструктор
-        /// <summary>
-        /// Конструктор
-        /// </summary>
-        public AccountController()
-        {
-            accList.Add(
-                new Account()
-                {
-                    Id = 1,
-                    AccountNumber = "40818810000000001",
-                    Balance = 1000
-                });
-
-            accList.Add(
-                new Account()
-                {
-                    Id = 2,
-                    AccountNumber = "40818810000000002",
-                    Balance = 2000
-                });
-
-            accList.Add(
-                new Account()
-                {
-                    Id = 3,
-                    AccountNumber = "40818810000000003",
-                    Balance = 3000
-                });
-
-            accHistList.Add(
-                new AccountHistory()
-                {
-                    Id = 1,
-                    AccId = 1,
-                    Amount = 1500,
-                    ChangedAt = DateTime.Now
-                }
-            );
-
-            accHistList.Add(
-                new AccountHistory()
-                {
-                    Id = 2,
-                    AccId = 2,
-                    Amount = 1700,
-                    ChangedAt = DateTime.Now
-                }
-            );
-
-            accHistList.Add(
-                new AccountHistory()
-                {
-                    Id = 3,
-                    AccId = 2,
-                    Amount = 1200,
-                    ChangedAt = DateTime.Now
-                }
-            );
-        }
-        #endregion
 
         #region Получение истории транзакций по счету
         /// <summary>
@@ -98,9 +34,13 @@ namespace AccountApi.Controllers
                     Message = "Указан некорректный параметр запроса"
                 });
 
-            var result = accHistList.Where(e => e.AccId == accId);
+            AccountHistory[] accHistList;
 
-            if (result == null)
+            using (AccountHistoryQuery accHistQuery = new AccountHistoryQuery())
+                accHistList = accHistQuery.GetAccountHistory(accId.Value).ToArray();
+
+
+            if (accHistList == null)
                 return JsonConvert.SerializeObject(new AccountHistoryResp()
                 {
                     Code = (int)OperationCode.SERVICE_ERROR,
@@ -108,12 +48,12 @@ namespace AccountApi.Controllers
                     Message = "Внутренняя ошибка работы сервиса"
                 });
 
-            if (!result?.Any() ?? false)
+            if (!accHistList.Any())
                 return JsonConvert.SerializeObject(new AccountHistoryResp()
                 {
                     Code = (int)OperationCode.SERVICE_ERROR,
-                    Status = Enum.GetName(typeof(OperationCode), OperationCode.SERVICE_ERROR),
-                    Message = "Счет не найден"
+                    Status = Enum.GetName(typeof(OperationCode), OperationCode.NOT_FOUND),
+                    Message = "Счет для проведения транзакции не найден"
                 });
 
             using (AccountHistoryQuery accHistQuery = new AccountHistoryQuery())
@@ -171,8 +111,8 @@ namespace AccountApi.Controllers
                 return JsonConvert.SerializeObject(new AccountHistoryResp()
                 {
                     Code = (int)OperationCode.SERVICE_ERROR,
-                    Status = Enum.GetName(typeof(OperationCode), OperationCode.SERVICE_ERROR),
-                    Message = "Внутренняя ошибка работы сервиса"
+                    Status = Enum.GetName(typeof(OperationCode), OperationCode.NOT_FOUND),
+                    Message = "Счет для проведения транзакции не найден"
                 });
 
             decimal currBalance = acc.Balance;
@@ -187,7 +127,7 @@ namespace AccountApi.Controllers
                 using (AccountHistoryQuery accHistQuery = new AccountHistoryQuery())
                     accHistQuery.CreateEntity(new AccountHistory()
                     {
-                        AccId = accId.Value,
+                        AccId = acc.Id,
                         ChangedAt = DateTime.Now,
                         Amount = acc.Balance
                     });
@@ -251,49 +191,59 @@ namespace AccountApi.Controllers
                     Message = "Указан некорректный параметр запроса"
                 });
 
-            var result = accList.Where(e => e.Id == accId).FirstOrDefault();
+            //Получение информации о счете
+            Account acc = new Account();
+            using (AccountQuery accQuery = new AccountQuery())
+                acc = accQuery.GetAccount(accId.Value);
 
-            if (result == null)
+            if (acc == null)
                 return JsonConvert.SerializeObject(new AccountHistoryResp()
                 {
                     Code = (int)OperationCode.SERVICE_ERROR,
-                    Status = Enum.GetName(typeof(OperationCode), OperationCode.SERVICE_ERROR),
-                    Message = "Внутренняя ошибка работы сервиса"
+                    Status = Enum.GetName(typeof(OperationCode), OperationCode.NOT_FOUND),
+                    Message = "Счет для проведения транзакции не найден"
                 });
 
-            decimal currBalance = result.Balance;
+            decimal currBalance = acc.Balance;
 
             try
             {
-                if (result.Balance - amount.Value < 0)
+                if (acc.Balance - amount.Value < 0)
                     return JsonConvert.SerializeObject(new AccountHistoryResp()
                     {
                         Code = (int)OperationCode.OK,
                         Status = Enum.GetName(typeof(OperationCode), OperationCode.OK),
-                        Message = $"Запрашиваемая для снятия сумма ({amount.Value}) превышает остаток на счете {result.Balance}"
+                        Message = $"Запрашиваемая для снятия сумма ({amount.Value}) превышает остаток на счете {acc.Balance}"
                     });
 
-                result.Balance -= amount.Value;
+                acc.Balance -= amount.Value;
 
-                accHistList.Add(new AccountHistory()
-                {
-                    Id = 5,
-                    AccId = accId.Value,
-                    ChangedAt = DateTime.Now,
-                    Amount = result.Balance
-                });
+                using (AccountQuery accQuery = new AccountQuery())
+                    accQuery.UpdateEntity(acc);
+
+                using (AccountHistoryQuery accHistQuery = new AccountHistoryQuery())
+                    accHistQuery.CreateEntity(new AccountHistory()
+                    {
+                        AccId = acc.Id,
+                        ChangedAt = DateTime.Now,
+                        Amount = acc.Balance
+                    });
 
                 return JsonConvert.SerializeObject(new AccountHistoryResp()
                 {
                     Code = (int)OperationCode.OK,
                     Status = Enum.GetName(typeof(OperationCode), OperationCode.OK),
-                    Message = $"Снятие средств со счета в сумме {amount.Value}. Баланс счета {result.Balance}"
+                    Message = $"Снятие средств со счета в сумме {amount.Value}. Баланс счета {acc.Balance}"
                 });
             }
             catch (Exception ex)
             {
                 //Откат операции
-                result.Balance = currBalance;
+                using (AccountQuery accQuery = new AccountQuery())
+                {
+                    acc.Balance = currBalance;
+                    accQuery.UpdateEntity(acc);
+                }
 
                 return JsonConvert.SerializeObject(new AccountHistoryResp()
                 {
@@ -351,15 +301,20 @@ namespace AccountApi.Controllers
                     Message = "Указан некорректный параметр запроса"
                 });
 
-            var srcAcc = accList.Where(e => e.Id == srcAccId).FirstOrDefault();
-            var descAcc = accList.Where(e => e.Id == destAccId).FirstOrDefault();
+            //Получение информации о счетах
+            Account srcAcc, descAcc = new Account();
+            using (AccountQuery accQuery = new AccountQuery())
+            {
+                srcAcc = accQuery.GetAccount(srcAccId.Value);
+                descAcc = accQuery.GetAccount(destAccId.Value);
+            }
 
             if (srcAcc == null || descAcc == null)
                 return JsonConvert.SerializeObject(new AccountHistoryResp()
                 {
                     Code = (int)OperationCode.SERVICE_ERROR,
-                    Status = Enum.GetName(typeof(OperationCode), OperationCode.SERVICE_ERROR),
-                    Message = "Внутренняя ошибка работы сервиса"
+                    Status = Enum.GetName(typeof(OperationCode), OperationCode.NOT_FOUND),
+                    Message = "Счет для проведения транзакции не найден"
                 });
 
             decimal srcAccCurrBalance = srcAcc.Balance;
@@ -378,21 +333,28 @@ namespace AccountApi.Controllers
                 srcAcc.Balance -= amount.Value;
                 descAcc.Balance += amount.Value;
 
-                accHistList.Add(new AccountHistory()
+                using (AccountQuery accQuery = new AccountQuery())
                 {
-                    Id = 5,
-                    AccId = srcAcc.Id,
-                    ChangedAt = DateTime.Now,
-                    Amount = srcAcc.Balance
-                });
+                    accQuery.UpdateEntity(srcAcc);
+                    accQuery.UpdateEntity(descAcc);
+                }
 
-                accHistList.Add(new AccountHistory()
+                using (AccountHistoryQuery accHistQuery = new AccountHistoryQuery())
                 {
-                    Id = 6,
-                    AccId = descAcc.Id,
-                    ChangedAt = DateTime.Now,
-                    Amount = descAcc.Balance
-                });
+                    accHistQuery.CreateEntity(new AccountHistory()
+                    {
+                        AccId = srcAcc.Id,
+                        ChangedAt = DateTime.Now,
+                        Amount = srcAcc.Balance
+                    });
+
+                    accHistQuery.CreateEntity(new AccountHistory()
+                    {
+                        AccId = descAcc.Id,
+                        ChangedAt = DateTime.Now,
+                        Amount = descAcc.Balance
+                    });
+                }
 
                 return JsonConvert.SerializeObject(new TransferResp()
                 {
@@ -406,8 +368,14 @@ namespace AccountApi.Controllers
             catch (Exception ex)
             {
                 //Откат операции
-                srcAcc.Balance = srcAccCurrBalance;
-                descAcc.Balance = descAccCurrBalance;
+                using (AccountQuery accQuery = new AccountQuery())
+                {
+                    srcAcc.Balance = srcAccCurrBalance;
+                    descAcc.Balance = descAccCurrBalance;
+
+                    accQuery.UpdateEntity(srcAcc);
+                    accQuery.UpdateEntity(descAcc);
+                }
 
                 return JsonConvert.SerializeObject(new AccountHistoryResp()
                 {
