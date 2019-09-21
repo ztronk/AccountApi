@@ -3,25 +3,6 @@
 -- =============================================
 -- Author:		
 -- Create date: 21/09/2019
--- Description:	Таблица истории транзакции
--- =============================================
-
---drop table AccountHistories
-create table AccountHistories (
-	Id						int identity(1, 1),		--Код, первичный ключ
-
-	AccId					int,					--Код счета
-	Amount					decimal(20, 2)			--Сумма транзакции,
-	ChangedAt				datetime				--Дата транзакции,
-
-	constraint pk_AccountHistories				primary key(Id),
-	constraint fk_AccountHistories_AccId	foreign key(AccId)	references Accounts(Id)
-)
-
-
--- =============================================
--- Author:		
--- Create date: 21/09/2019
 -- Description:	Таблица счетов
 -- =============================================
 
@@ -33,6 +14,24 @@ create table Accounts (
 	Balance					decimal(20, 2)			--Баланс счета,
 
 	constraint pk_Accounts primary key(Id)
+)
+
+-- =============================================
+-- Author:		
+-- Create date: 21/09/2019
+-- Description:	Таблица истории транзакции
+-- =============================================
+
+--drop table AccountHistories
+create table AccountHistories (
+	Id						int identity(1, 1),		--Код, первичный ключ
+
+	AccId					int,					--Код счета
+	Amount					decimal(20, 2),			--Сумма транзакции,
+	ChangedAt				datetime				--Дата транзакции,
+
+	constraint pk_AccountHistories			primary key(Id),
+	constraint fk_AccountHistories_AccId	foreign key(AccId)	references Accounts(Id)
 )
 
 insert into Accounts values ('40817810110000001', 0);
