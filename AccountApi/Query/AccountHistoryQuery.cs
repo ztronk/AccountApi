@@ -16,7 +16,9 @@ namespace AccountApi.Query
         /// <returns></returns>
         public IEnumerable<AccountHistory> GetAccountHistory(int accId)
         {
-            return _context.Where(e => e.AccId.Equals(accId));
+            return _context
+                    .Where(e => e.AccId.Equals(accId))
+                    .OrderByDescending(s => s.Id);
         }
     }
 }
