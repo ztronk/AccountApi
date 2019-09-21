@@ -1,4 +1,5 @@
-﻿using System;
+﻿using AccountApi.Models;
+using System;
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
@@ -11,7 +12,7 @@ namespace AccountApi.Query
     public class BaseQuery<T> : DbContext where T : class
     {
         public BaseQuery()
-            : base("AccountApiConn")
+            : base(Config.SqlConnName)
         { }
 
         public DbSet<T> _context { get; set; }

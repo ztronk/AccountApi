@@ -22,15 +22,27 @@ namespace AccountApi.Models
         /// Строка подключения к SQL-серверу
         /// </summary>
         private static string _sqlConnStr;
+        private static string _sqlConnStrName;
 
         public static string SqlConnStr
         {
             get
             {
                 if (string.IsNullOrEmpty(_sqlConnStr))
-                    _sqlConnStr = ConfigurationManager.ConnectionStrings["Api"].ConnectionString;
+                    _sqlConnStr = ConfigurationManager.ConnectionStrings["AccountApiConn"].ConnectionString;
 
                 return _sqlConnStr;
+            }
+        }
+
+        public static string SqlConnName
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(_sqlConnStrName))
+                    _sqlConnStrName = ConfigurationManager.ConnectionStrings["AccountApiConn"].Name;
+
+                return _sqlConnStrName;
             }
         }
     }
