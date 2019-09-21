@@ -1,18 +1,57 @@
-﻿/*Таблица истории транзакции*/
+﻿use AccountApi;
+
+-- =============================================
+-- Author:		
+-- Create date: 21/09/2019
+-- Description:	Таблица истории транзакции
+-- =============================================
+
+--drop table AccountHistories
 create table AccountHistories (
-	Id int not null primary key identity(1, 1),
-	AccId int,
-	Amount decimal(20, 2),
-	ChangedAt datetime,
-	constraint fk_AccId foreign key AccId references Accounts(Id)
+	Id						int identity(1, 1),		--Код, первичный ключ
+
+	AccId					int,					--Код счета
+	Amount					decimal(20, 2)			--Сумма транзакции,
+	ChangedAt				datetime				--Дата транзакции,
+
+	constraint pk_AccountHistories				primary key(Id),
+	constraint fk_AccountHistories_AccId	foreign key(AccId)	references Accounts(Id)
 )
 
-/*Таблица счетов*/
-create table Account (
-	Id int not null primary key identity(1, 1),
-	AccountNumber nvarchar(20),
-	Balance decimal(20, 2)
+
+-- =============================================
+-- Author:		
+-- Create date: 21/09/2019
+-- Description:	Таблица счетов
+-- =============================================
+
+--drop table Accounts
+create table Accounts (
+	Id						int identity(1, 1),		--Код, первичный ключ
+
+	AccountNumber			nvarchar(20),			--Номер счета
+	Balance					decimal(20, 2)			--Баланс счета,
+
+	constraint pk_Accounts primary key(Id)
 )
 
-insert into Accounts values ('40817810110000001', 0)
-insert into Accounts values ('40817810110000002', 0)
+insert into Accounts values ('40817810110000001', 0);
+insert into Accounts values ('40817810110000002', 0);
+insert into Accounts values ('40817810110000003', 0);
+insert into Accounts values ('40817810110000004', 0);
+insert into Accounts values ('40817810110000005', 0);
+insert into Accounts values ('40817810110000006', 0);
+insert into Accounts values ('40817810110000007', 0);
+insert into Accounts values ('40817810110000008', 0);
+insert into Accounts values ('40817810110000009', 0);
+insert into Accounts values ('40817810110000010', 0);
+insert into Accounts values ('40817810110000011', 0);
+insert into Accounts values ('40817810110000012', 0);
+insert into Accounts values ('40817810110000013', 0);
+insert into Accounts values ('40817810110000014', 0);
+insert into Accounts values ('40817810110000015', 0);
+insert into Accounts values ('40817810110000016', 0);
+insert into Accounts values ('40817810110000017', 0);
+insert into Accounts values ('40817810110000018', 0);
+insert into Accounts values ('40817810110000019', 0);
+insert into Accounts values ('40817810110000020', 0);
