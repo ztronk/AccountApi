@@ -9,10 +9,10 @@ namespace AccountApi.Query
     public class BaseQuery<T> : DbContext where T : class
     {
         public BaseQuery()
-            : base("Api")
+            : base("AccountApiConn")
         { }
 
-        private DbSet<T> _context { get; set; }
+        public DbSet<T> _context { get; set; }
 
         /// <summary>
         /// Получение всех записей сущности
