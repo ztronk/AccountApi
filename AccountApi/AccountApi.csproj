@@ -91,6 +91,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Global.asax" />
+    <Content Include="Resources\SqlScripts.txt" />
     <Content Include="Web.config" />
   </ItemGroup>
   <ItemGroup>
@@ -107,6 +108,7 @@
     <Compile Include="Models\TransferResp.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Query\AccountHistoryQuery.cs" />
+    <Compile Include="Query\AccountQuery.cs" />
     <Compile Include="Query\BaseQuery.cs" />
   </ItemGroup>
   <ItemGroup>

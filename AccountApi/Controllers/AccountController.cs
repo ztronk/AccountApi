@@ -87,47 +87,45 @@ namespace AccountApi.Controllers
         [Route("api/account/{account_id:int}/history/")]
         public string GetAccountHistory([FromUri(Name = "account_id")]int? accId)
         {
+            int _accId;
+            if (!accId.HasValue
+                || (accId.HasValue ? !int.TryParse(accId.Value.ToString(), out _accId) : false)
+                || accId.Value < 1)
+                return JsonConvert.SerializeObject(new AccountHistoryResp()
+                {
+                    Code = (int)OperationCode.INVALID_REQUEST,
+                    Status = Enum.GetName(typeof(OperationCode), OperationCode.INVALID_REQUEST),
+                    Message = "Указан некорректный параметр запроса"
+                });
+
+            var result = accHistList.Where(e => e.AccId == accId);
+
+            if (result == null)
+                return JsonConvert.SerializeObject(new AccountHistoryResp()
+                {
+                    Code = (int)OperationCode.SERVICE_ERROR,
+                    Status = Enum.GetName(typeof(OperationCode), OperationCode.SERVICE_ERROR),
+                    Message = "Внутренняя ошибка работы сервиса"
+                });
+
+            if (!result?.Any() ?? false)
+                return JsonConvert.SerializeObject(new AccountHistoryResp()
+                {
+                    Code = (int)OperationCode.SERVICE_ERROR,
+                    Status = Enum.GetName(typeof(OperationCode), OperationCode.SERVICE_ERROR),
+                    Message = "Счет не найден"
+                });
+
             using (AccountHistoryQuery accHistQuery = new AccountHistoryQuery())
             {
-                var accHistList = accHistQuery.GetAccountHistory(accId.Value);
-                return JsonConvert.SerializeObject(accHistList);
+                return JsonConvert.SerializeObject(new AccountHistoryResp()
+                {
+                    Code = (int)OperationCode.OK,
+                    Status = Enum.GetName(typeof(OperationCode), OperationCode.OK),
+                    Message = "Запрос выполнен успешно",
+                    AccountHistoryList = accHistQuery.GetAccountHistory(accId.Value).ToArray()
+                });
             }
-            //int _accId;
-            //if (!accId.HasValue 
-            //    || (accId.HasValue ? !int.TryParse(accId.Value.ToString(), out _accId) : false)
-            //    || accId.Value < 1)
-            //    return JsonConvert.SerializeObject(new AccountHistoryResp()
-            //    {
-            //        Code = (int)OperationCode.INVALID_REQUEST,
-            //        Status = Enum.GetName(typeof(OperationCode), OperationCode.INVALID_REQUEST),
-            //        Message = "Указан некорректный параметр запроса"
-            //    });
-
-            //var result = accHistList.Where(e => e.AccId == accId);
-
-            //if (result == null)
-            //    return JsonConvert.SerializeObject(new AccountHistoryResp()
-            //    {
-            //        Code = (int)OperationCode.SERVICE_ERROR,
-            //        Status = Enum.GetName(typeof(OperationCode), OperationCode.SERVICE_ERROR),
-            //        Message = "Внутренняя ошибка работы сервиса"
-            //    });
-
-            //if (!result?.Any() ?? false)
-            //    return JsonConvert.SerializeObject(new AccountHistoryResp()
-            //    {
-            //        Code = (int)OperationCode.SERVICE_ERROR,
-            //        Status = Enum.GetName(typeof(OperationCode), OperationCode.SERVICE_ERROR),
-            //        Message = "Счет не найден"
-            //    });
-
-            //return JsonConvert.SerializeObject(new AccountHistoryResp()
-            //{
-            //    Code = (int)OperationCode.OK,
-            //    Status = Enum.GetName(typeof(OperationCode), OperationCode.OK),
-            //    Message = "Запрос выполнен успешно",
-            //    AccountHistoryList = result.ToArray()
-            //});
         }
         #endregion
 
@@ -164,9 +162,12 @@ namespace AccountApi.Controllers
                     Message = "Указан некорректный параметр запроса"
                 });
 
-            var result = accList.Where(e => e.Id == accId).FirstOrDefault();
+            //Получение информации о счете
+            Account acc = new Account();
+            using (AccountQuery accQuery = new AccountQuery())
+                acc = accQuery.GetAccount(accId.Value);
 
-            if (result == null)
+            if (acc == null)
                 return JsonConvert.SerializeObject(new AccountHistoryResp()
                 {
                     Code = (int)OperationCode.SERVICE_ERROR,
@@ -174,32 +175,39 @@ namespace AccountApi.Controllers
                     Message = "Внутренняя ошибка работы сервиса"
                 });
 
-            decimal currBalance = result.Balance;
+            decimal currBalance = acc.Balance;
 
             try
             {
-                result.Balance += amount.Value;
+                acc.Balance += amount.Value;
 
-                accHistList.Add(new AccountHistory()
-                {
-                    Id = 4,
-                    AccId = accId.Value,
-                    ChangedAt = DateTime.Now,
-                    Amount = result.Balance
-                });
+                using (AccountQuery accQuery = new AccountQuery())
+                    accQuery.UpdateEntity(acc);
+
+                using (AccountHistoryQuery accHistQuery = new AccountHistoryQuery())
+                    accHistQuery.CreateEntity(new AccountHistory()
+                    {
+                        AccId = accId.Value,
+                        ChangedAt = DateTime.Now,
+                        Amount = acc.Balance
+                    });
 
                 return JsonConvert.SerializeObject(new AccountHistoryResp()
                 {
                     Code = (int)OperationCode.OK,
                     Status = Enum.GetName(typeof(OperationCode), OperationCode.OK),
-                    Message = $"Внесение средств на счет в сумме {amount.Value}. Баланс счета {result.Balance}"
+                    Message = $"Внесение средств на счет в сумме {amount.Value}. Баланс счета {acc.Balance}"
                 });
             }
             catch (Exception ex)
             {
                 //Откат операции
-                result.Balance = currBalance;
-
+                using (AccountQuery accQuery = new AccountQuery())
+                {
+                    acc.Balance = currBalance;
+                    accQuery.UpdateEntity(acc);
+                }
+                    
                 return JsonConvert.SerializeObject(new AccountHistoryResp()
                 {
                     Code = (int)OperationCode.SERVICE_ERROR,

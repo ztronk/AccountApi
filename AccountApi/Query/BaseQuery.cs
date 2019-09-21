@@ -27,5 +27,26 @@ namespace AccountApi.Query
                 yield return item;
             }
         }
+
+        /// <summary>
+        /// Добавление сущности
+        /// </summary>
+        /// <param name="entity"></param>
+        public void CreateEntity(T entity)
+        {
+            _context.Add(entity);
+            SaveChanges();
+        }
+
+        /// <summary>
+        /// Обновление сущности
+        /// </summary>
+        /// <param name="entity"></param>
+        public void UpdateEntity(T entity)
+        {
+            _context.Add(entity);
+            Entry(entity).State = EntityState.Modified;
+            SaveChanges();
+        }
     }
 }

@@ -1,0 +1,17 @@
+﻿/*Таблица истории транзакции*/
+create table AccountHistories (
+	Id int not null primary key identity(1, 1),
+	AccId int,
+	Amount decimal(20, 2),
+	ChangedAt datetime,
+	constraint fk_AccId foreign key AccId references Accounts(Id)
+)
+
+/*Таблица счетов*/
+create table Account (
+	Id int not null primary key identity(1, 1),
+	AccountNumber nvarchar(20),
+	Balance decimal(20, 2)
+)
+
+insert into Account values ('40817810110000001', 0)
