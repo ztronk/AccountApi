@@ -33,6 +33,5 @@ namespace AccountApi.Models
         /// </summary>
         [JsonProperty(PropertyName = "changed_at")]
         public DateTime ChangedAt { get; set; }
-
     }
 }

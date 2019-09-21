@@ -87,10 +87,10 @@ namespace AccountApi.Controllers
         [Route("api/account/{account_id:int}/history/")]
         public string GetAccountHistory([FromUri(Name = "account_id")]int? accId)
         {
-            using (BaseQuery<AccountHistory> accHistQuery = new BaseQuery<AccountHistory>())
+            using (AccountHistoryQuery accHistQuery = new AccountHistoryQuery())
             {
-                var accHistList = accHistQuery.GetList();
-                return JsonConvert.SerializeObject(accHistList.FirstOrDefault());
+                var accHistList = accHistQuery.GetAccountHistory(accId.Value);
+                return JsonConvert.SerializeObject(accHistList);
             }
             //int _accId;
             //if (!accId.HasValue 
